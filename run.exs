@@ -16,28 +16,38 @@ defmodule Run do
 
     IO.inspect("will visit #{links |> Enum.count()} pages")
 
-    Enum.each(links, fn link ->
-      {:ok, session2} = Wallaby.start_session()
+    images =
+      Enum.each(links, fn link ->
+        {:ok, session2} = Wallaby.start_session()
 
-      IO.inspect("visitng #{attr(link, "href")}")
+        IO.inspect("visitng #{attr(link, "href")}")
 
-      session2 = session2 |> visit(attr(link, "href"))
-      imgs =
-        session2
-        |> all(css("article div div div div img"))
-
-
-      if Enum.count(imgs) > 0 do
-        [img | _] = imgs
-        attr(img, "src")
-      else
-        [video | _] =
+        session2 = session2 |> visit(attr(link, "href"))
+        imgs =
           session2
-          |> all(css("article div div div div video"))
+          |> all(css("article div div div div img"))
 
-        attr(video, "poster")
-      end
-    end)
+
+        image =
+          if Enum.count(imgs) > 0 do
+            [img | _] = imgs
+            attr(img, "src")
+          else
+            [video | _] =
+              session2
+              |> all(css("article div div div div video"))
+
+            attr(video, "poster")
+          end
+
+        Wallaby.end_session(session2) # without those, Chrome crashes
+
+        image
+      end)
+
+    Wallaby.end_session(session) # without those, Chrome crashes
+
+    images
   end
 end
 
